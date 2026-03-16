@@ -1,4 +1,4 @@
-# Anku Data Analysis
+# Water Data Analysis
 
 This repository contains the analysis code used to fit current-dependent spectral data and generate the figures and summary tables used in the accompanying study. The workflow takes raw/processed fit results, aggregates peak parameters, and produces publication-ready multi-panel figures and derived quantities (percentages, Stark slopes, etc.).
 
@@ -58,3 +58,15 @@ You can install the required packages, for example:
 
 ```bash
 pip install numpy pandas matplotlib openpyxl
+```
+
+---
+## License
+
+MIT License
+
+## Author
+
+Adrián Pinilla-Sánchez - adpisa@gmail.com
+
+---
