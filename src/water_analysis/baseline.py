@@ -1,10 +1,6 @@
 import numpy as np
 from pybaselines import Baseline
 
-
-
-
-
 def correct_baseline(intensity: np.ndarray, method: str = 'derpsalsa', **kwargs) -> tuple[np.ndarray, dict]:
     """
     Apply baseline correction to a spectrum.

@@ -33,8 +33,3 @@ def gaussian(x, *params):
     amp = params[1]
     fwhm = params[2]
     return amp * np.exp(-(np.power(x-pos,2)/(fwhm*fwhm/4.0/np.log(2.0))))
-
-
-def nearest_intensity(target, wn, int_corr):
-    idx = np.argmin(np.abs(wn - target))
-    return float(int_corr[idx])
