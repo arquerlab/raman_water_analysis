@@ -32,6 +32,7 @@ def default_results_dir() -> pathlib.Path:
 def read_long_dataframe(
     excel_path: Optional[pathlib.Path] = None,
     current_voltage_excel: Optional[pathlib.Path] = None,
+    long_df_out_path: Optional[pathlib.Path] = None,
 ) -> pd.DataFrame:
     """
     Read the spectroscopy Excel file and return a tidy long-form dataframe.
@@ -46,6 +47,9 @@ def read_long_dataframe(
         Optional explicit path to the current–voltage Excel file.
         If omitted, ``data/current vs voltage.xlsx`` relative to the
         project root is used.
+    long_df_out_path:
+        Optional explicit output path for the intermediate ``long_df.csv``.
+        If omitted, the repository-wide ``data/long_df.csv`` is used.
     """
     root = get_project_root()
 
@@ -94,7 +98,7 @@ def read_long_dataframe(
         # If the IV file is missing, keep the long_df without extra columns.
         pass
 
-    out_path = root / "data" / "long_df.csv"
+    out_path = long_df_out_path if long_df_out_path is not None else root / "data" / "long_df.csv"
     out_path.parent.mkdir(parents=True, exist_ok=True)
     long_df.to_csv(out_path, index=False)
 

@@ -1,6 +1,3 @@
-data_path = "./data/operando CO2 water.xlsx"
-
-
 [peaks.membrane]
 fit = true
 initial_position = 3050.0

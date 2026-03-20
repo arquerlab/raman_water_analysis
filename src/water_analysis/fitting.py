@@ -45,8 +45,21 @@ def fit_currents(
 
     results: list[dict] = []
     if long_df is None:
-        # Fall back to long_df.csv if not provided
-        long_df = pd.read_csv(os.path.join(os.path.dirname(results_dir), "data", "long_df.csv"))
+        # Fall back to long_df.csv if not provided.
+        # For per-subfolder runs, long_df.csv is expected to be inside results_dir.
+        candidate_paths = [
+            os.path.join(results_dir, "long_df.csv"),
+            os.path.join(os.path.dirname(results_dir), "data", "long_df.csv"),
+        ]
+        for candidate in candidate_paths:
+            if os.path.exists(candidate):
+                long_df = pd.read_csv(candidate)
+                break
+        else:
+            raise FileNotFoundError(
+                "long_df was not provided and long_df.csv could not be found. "
+                f"Tried: {', '.join(candidate_paths)}"
+            )
 
     exp_id = 0
 

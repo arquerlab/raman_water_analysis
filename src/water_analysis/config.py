@@ -1,6 +1,9 @@
 import pathlib
 
-import tomli as toml
+try:
+    import tomllib as toml  # Python 3.11+
+except ModuleNotFoundError:  # pragma: no cover
+    import tomli as toml  # type: ignore
 
 
 def get_project_root() -> pathlib.Path:

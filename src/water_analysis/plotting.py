@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import glob
 import os
+import pathlib
 from typing import Optional
 
 import matplotlib.pyplot as plt
@@ -14,7 +15,11 @@ from .config import config
 from .io import default_results_dir, get_project_root
 
 
-def plot_fit_params(fit_results: Optional[pd.DataFrame] = None, results_dir: Optional[str] = None) -> None:
+def plot_fit_params(
+    fit_results: Optional[pd.DataFrame] = None,
+    results_dir: Optional[str] = None,
+    current_voltage_excel: Optional[pathlib.Path] = None,
+) -> None:
     """
     Generate all summary plots and multipanel figures from fitted peak parameters.
 
@@ -283,8 +288,13 @@ def plot_fit_params(fit_results: Optional[pd.DataFrame] = None, results_dir: Opt
 
     # Stark slopes
     root = get_project_root()
+    iv_path = (
+        pathlib.Path(current_voltage_excel)
+        if current_voltage_excel is not None
+        else root / "data" / "current vs voltage.xlsx"
+    )
     try:
-        iv_df = pd.read_excel(root / "data" / "current vs voltage.xlsx")
+        iv_df = pd.read_excel(iv_path)
         current_col = iv_df.columns[0]
         voltage_col = iv_df.columns[1]
         iv_df = iv_df.rename(columns={current_col: "current_A", voltage_col: "cell_voltage"})

@@ -1,0 +1,7 @@
+interval_mA_low,interval_mA_high,interval_label,peak_index,species,stark_slope,stark_slope_err
+50.0,200.0,0.05–0.2,2,4-HB water,,
+50.0,200.0,0.05–0.2,3,3-HB water,,
+200.0,400.0,0.2–0.4,2,4-HB water,,
+200.0,400.0,0.2–0.4,3,3-HB water,,
+400.0,750.0,0.4–0.75,2,4-HB water,,
+400.0,750.0,0.4–0.75,3,3-HB water,,
