@@ -1,13 +1,17 @@
 cff-version: 1.2.0
 message: "If you use this software, please cite it as below."
-title: "Water Data Analysis"
-type: software
-license: MIT
+title: "Raman Water Analysis"
 authors:
-  - family-names: "Pinilla-Sánchez"
-    given-names: "Adrián"
-    email: "adpisa@gmail.com"
-repository-code: "REPLACE_WITH_REPOSITORY_URL"
+  - family-names: Pinilla-Sánchez
+    given-names: Adrián
+    affiliation: Institute of Photonic Sciences (ICFO)
+  - family-names: Guha
+    given-names: Anku
+    affiliation: Institute of Photonic Sciences (ICFO)
+version: 1.0.2
+doi: 10.5281/zenodo.19818002
+date-released: 2026-04-27
+license: MIT
 abstract: "Python tools to fit current-dependent Raman spectral data, aggregate peak parameters, and generate figures and summary tables (percentages, Stark slopes, multipanel fit figures)."
 keywords:
   - Raman spectroscopy
