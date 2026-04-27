@@ -66,6 +66,38 @@ python scripts/make_fit_summary_plots.py --results-dir results/flow_cell
 
 ---
 
+## Configuration (`config.toml`)
+
+The fitting model (which peaks are included and their constraints) is controlled by `config.toml`.
+
+### Peak definitions
+Each peak is defined under `[peaks.<name>]`, for example:
+
+- `fit`: enable/disable fitting this peak (`true`/`false`)
+- `initial_position`: initial Raman shift guess (cm⁻¹)
+- `initial_fwhm`: initial FWHM guess (cm⁻¹)
+- `position_bounds`: allowed `[min, max]` range for the fitted position (cm⁻¹)
+- `fwhm_bounds`: allowed `[min, max]` range for the fitted FWHM (cm⁻¹)
+
+Example:
+
+```toml
+[peaks.0hb]
+fit = true
+initial_position = 3580.25
+initial_fwhm = 100.0
+position_bounds = [3580.0, 3580.5]
+fwhm_bounds = [80.0, 150.0]
+```
+
+### Notes
+- The peaks are fit as a sum of Gaussians in the order they appear in `config.toml`.
+- Setting `peaks.0hb.fit = true` affects downstream plots:
+  - `fit_peak_params_single.*` uses an extra row in the multi-panel grid.
+  - `fit_peak_params_percentages.*` includes an additional 0-HB percentage series.
+
+---
+
 ## Repository structure (current)
 
 - `src/water_analysis/`  
