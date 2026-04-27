@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 from matplotlib import colors as mcolors
 from matplotlib.ticker import ScalarFormatter
+from PIL import Image
 
 from .config import config
 from .io import default_results_dir, get_project_root
@@ -17,6 +18,7 @@ from .io import default_results_dir, get_project_root
 
 def plot_fit_params(
     fit_results: Optional[pd.DataFrame] = None,
+    fittings_list: Optional[list[dict]] = None,
     results_dir: Optional[str] = None,
     current_voltage_excel: Optional[pathlib.Path] = None,
 ) -> None:
@@ -28,6 +30,9 @@ def plot_fit_params(
     fit_results:
         Optional DataFrame with fitted peak parameters. If omitted, the
         function reads ``fit_peak_params.csv`` from the results directory.
+    fittings_list:
+        Optional list of dictionaries containing the fitting results for each current/experiment.
+        If omitted, the function reads ``fit_peak_params.csv`` from the results directory.
     results_dir:
         Directory where intermediate CSVs and figures are read/written.
         Defaults to the project's ``results`` directory.
@@ -53,10 +58,11 @@ def plot_fit_params(
 
     capsize = 3
     marker = "o"
-    color_peak_4 = "#c8b9e5ff"
-    color_peak_3 = "#78a3cfff"
-    color_peak_2 = "#acac9fff"
-    color_peak_1 = "#c8b9e540"
+    # Brighter, more saturated peak colors (kept distinct from red fit / orange baseline).
+    color_peak_4 = "#9467BDFF"  # 0-HB (purple)
+    color_peak_3 = "#1F77B4FF"  # 3-HB water (blue)
+    color_peak_2 = "#2CA02CFF"  # 4-HB water (green)
+    color_peak_1 = "#8C564B55"  # Membrane (semi-transparent brown)
     legend_frameon = False
     label_peak_4 = "0-HB"
     label_peak_3 = "3-HB water"
@@ -221,9 +227,20 @@ def plot_fit_params(
     plt.close()
 
     # Percentages
+    # Peak indices in `agg` depend on which peaks are enabled in `config.toml` and
+    # the iteration order of `config["peaks"]`. We derive the indices dynamically
+    # to correctly include/exclude 0-HB in the percentages plot.
+    fit_order = [name for name, v in config["peaks"].items() if v.get("fit", False)]
+    peak_index_by_name = {name: idx + 1 for idx, name in enumerate(fit_order)}
+
+    membrane_peak_index = peak_index_by_name.get("membrane")
+    hb4_peak_index = peak_index_by_name.get("4hb")
+    hb3_peak_index = peak_index_by_name.get("3hb")
+    hb0_peak_index = peak_index_by_name.get("0hb")
+
     pct_rows = []
     for (current_mA, current_density), g in agg.groupby(["current_mA", "current_density"]):
-        g_use = g[g["peak_index"] != 1]
+        g_use = g if membrane_peak_index is None else g[g["peak_index"] != membrane_peak_index]
         total_amp_mean = g_use["amp_mean"].sum()
         if total_amp_mean == 0:
             continue
@@ -249,15 +266,28 @@ def plot_fit_params(
     pct_df = pd.DataFrame(pct_rows)
 
     pct_out = pct_df.copy()
-    pct_out["species"] = pct_out["peak_index"].map({2: label_peak_2, 3: label_peak_3})
+
+    species_map: dict[int, str] = {}
+    if hb4_peak_index is not None:
+        species_map[hb4_peak_index] = label_peak_2
+    if hb3_peak_index is not None:
+        species_map[hb3_peak_index] = label_peak_3
+    if hb0_peak_index is not None:
+        species_map[hb0_peak_index] = label_peak_4
+
+    pct_out["species"] = pct_out["peak_index"].map(species_map)
     pct_out.to_csv(os.path.join(results_dir, "fit_peak_params_percentages_data.csv"), index=False)
 
     fig_pct, ax_pct = plt.subplots(1, 1, figsize=(8, 4))
-    for peak, color, label in zip(
-        [2, 3],
-        [color_peak_2, color_peak_3],
-        [label_peak_2, label_peak_3],
-    ):
+    plot_items = []
+    if hb4_peak_index is not None:
+        plot_items.append((hb4_peak_index, color_peak_2, label_peak_2))
+    if hb3_peak_index is not None:
+        plot_items.append((hb3_peak_index, color_peak_3, label_peak_3))
+    if hb0_peak_index is not None:
+        plot_items.append((hb0_peak_index, color_peak_4, label_peak_4))
+
+    for peak, color, label in plot_items:
         df_peak = pct_df[pct_df["peak_index"] == peak].sort_values("current_density")
         if df_peak.empty:
             continue
@@ -478,52 +508,154 @@ def plot_fit_params(
     plt.close(fig_stark)
 
     # Multipanel figures
-    fit_files = sorted(glob.glob(os.path.join(results_dir, "fit_*_current_*_exp_*.png")))
 
     n_per_fig = 6
     n_rows, n_cols = 2, 3
 
-    for fig_idx in range(0, len(fit_files), n_per_fig):
-        chunk = fit_files[fig_idx : fig_idx + n_per_fig]
+    fittings_list_sorted = sorted(fittings_list, key=lambda x: float(x["sample"].split()[0]))
+
+    for fig_idx in range(0, len(fittings_list_sorted), n_per_fig):
+        chunk = fittings_list_sorted[fig_idx : fig_idx + n_per_fig]
         if not chunk:
             continue
 
-        fig, axes = plt.subplots(n_rows, n_cols, figsize=(12, 6), squeeze=True)
+        fig = plt.figure(figsize=(20, 10), constrained_layout=False)
+        outer = fig.add_gridspec(nrows=2, ncols=3, wspace=0.14, hspace=0.02)
+        ax_tops = []
+        ax_bottoms = []
+        shared_x_ax = None
+        for i in range(n_rows):
+            for j in range(n_cols):
+                inner = outer[i, j].subgridspec(nrows=2, ncols=1, hspace=0.05, height_ratios=[65, 35])
+                ax_top = fig.add_subplot(inner[0], sharex=shared_x_ax) if shared_x_ax is not None else fig.add_subplot(inner[0])
+                if shared_x_ax is None:
+                    shared_x_ax = ax_top
+                ax_bottom = fig.add_subplot(inner[1], sharex=shared_x_ax)
+                ax_tops.append(ax_top)
+                ax_bottoms.append(ax_bottom)
 
-        for ax in axes.ravel():
-            ax.axis("off")
+        # Hide everything by default; only show panels that have data.
+        for ax in ax_tops + ax_bottoms:
+            ax.set_visible(False)
 
-        for ax, img_path in zip(axes.ravel(), chunk):
-            img = plt.imread(img_path)
-            ax.imshow(img)
-            ax.axis("off")
-            filename = os.path.splitext(os.path.basename(img_path))[0]
-            _, current, exp = filename.split("_")[2], filename.split("_")[3], filename.split("_")[5]
-            title = f"{current} / {exp}"
-            ax.text(
-                0.5,
-                1.05,
-                title,
-                transform=ax.transAxes,
-                ha="center",
-                va="top",
-                fontsize=10,
+        for idx, (ax_top, ax_bottom, fit_dict) in enumerate(zip(ax_tops, ax_bottoms, chunk)):
+            if fit_dict is None:
+                continue
+
+            i = idx // n_cols
+            j = idx % n_cols
+
+            ax_top.set_visible(True)
+            ax_bottom.set_visible(True)
+
+            ax_top.plot(fit_dict["wn"], fit_dict["intensity"], color="black", label="Data")
+            ax_top.plot(fit_dict["wn"], fit_dict["fit_total"], color="red", label="Fitted")
+            ax_top.plot(fit_dict["wn"], fit_dict["baseline"], color="orange", label="Baseline")
+            ax_top.text(0.98, 0.98, "@" +fit_dict["sample"], fontsize=16, transform=ax_top.transAxes, ha="right", va="top")
+            ax_bottom.scatter(fit_dict["wn"], fit_dict["residuals"], color="black", label="Residuals")
+            start_params = len(fit_dict["popt"]) % 3
+            name_to_label = {"membrane": "Membrane", "4hb": "4-HB", "3hb": "3-HB", "0hb": "0-HB"}
+            name_to_color = {
+                "membrane": color_peak_1,
+                "4hb": color_peak_2,
+                "3hb": color_peak_3,
+                "0hb": color_peak_4,
+            }
+            component_names = [
+                name_to_label.get(str(n).lower(), str(n)) for n in fit_dict.get("peak_names", [])
+            ] or ["Membrane", "4-HB", "3-HB", "0-HB"]
+            component_keys = [str(n).lower() for n in fit_dict.get("peak_names", [])] or ["membrane", "4hb", "3hb", "0hb"]
+            component_idx = 0
+            for peak_idx in range(start_params, len(fit_dict["popt"]) - start_params, 3):
+                pos, amp, fwhm = fit_dict["popt"][peak_idx : peak_idx + 3]
+                gauss = amp * np.exp(
+                    -(np.power(fit_dict["wn"] - pos, 2) / (fwhm * fwhm / 4.0 / np.log(2.0)))
+                )
+                if component_idx < len(component_names):
+                    comp_label = component_names[component_idx]
+                else:
+                    comp_label = f"Gaussian {component_idx + 1}"
+                comp_key = component_keys[component_idx] if component_idx < len(component_keys) else None
+                comp_color = name_to_color.get(comp_key, None)
+                component_idx += 1
+                ax_top.plot(
+                    fit_dict["wn"],
+                    fit_dict["baseline"] + gauss,
+                    label=comp_label,
+                    color=comp_color,
+                )
+                ax_top.fill_between(
+                    fit_dict["wn"],
+                    fit_dict["baseline"] + gauss,
+                    fit_dict["baseline"],
+                    alpha=0.4,
+                    color=comp_color,
+                )
+            
+            # X ticks: bottom row shows them at the bottom (residual axis).
+            # Top row shows them at the top (intensity axis).
+            if i == n_rows - 1:
+                ax_bottom.set_xlabel("Raman shift (cm$^{-1}$)", fontsize=18)
+                ax_bottom.tick_params(labelbottom=True, bottom=True, labelsize=11)
+                ax_top.tick_params(labeltop=False, top=False, labelsize=11)
+                ax_top.set_xlabel("")
+            else:
+                ax_bottom.set_xlabel("")
+                ax_bottom.tick_params(labelbottom=False, bottom=False, labelsize=11)
+                ax_top.xaxis.tick_top()
+                ax_top.tick_params(labeltop=True, top=True, labelbottom=False, bottom=False, labelsize=11)
+                # Add x-label on top for the first-row intensity plots.
+                if i == 0:
+                    ax_top.set_xlabel("Raman shift (cm$^{-1}$)", fontsize=18)
+                    ax_top.xaxis.set_label_position("top")
+                else:
+                    ax_top.set_xlabel("")
+
+            if j == 0:
+                ax_top.set_ylabel("Intensity (a.u.)", fontsize=18)
+                ax_bottom.set_ylabel("Residuals (a.u.)", fontsize=18)
+            else:
+                ax_top.set_ylabel("")
+                ax_bottom.set_ylabel("")
+
+            ax_bottom.tick_params(axis="both", which="major")
+            ax_bottom.tick_params(axis="both", which="minor")
+
+        # Common legend for the whole 2x3 panel.Only with values of first plot (all are the same)
+        # Build a shared legend that also includes "Residuals".
+        first_visible = next((k for k, ax in enumerate(ax_tops) if ax.get_visible()), None)
+        if first_visible is not None:
+            handles_top, labels_top = ax_tops[first_visible].get_legend_handles_labels()
+            handles_bottom, labels_bottom = ax_bottoms[first_visible].get_legend_handles_labels()
+        else:
+            handles_top, labels_top = ([], [])
+            handles_bottom, labels_bottom = ([], [])
+        handles = handles_top + handles_bottom
+        labels = labels_top + labels_bottom
+        if handles:
+            fig.legend(
+                handles,
+                labels,
+                frameon=False,
+                fontsize=16,
+                ncol=5,
+                loc="upper center",
+                # Keep legend inside the canvas to avoid clipping on save.
+                bbox_to_anchor=(0.5, 0.995),
             )
 
-        plt.subplots_adjust(
-            left=0.03,
-            right=0.97,
-            top=0.97,
-            bottom=0.03,
-            wspace=0,
-            hspace=0,
-        )
+        # Layout: prefer the GridSpec spacing (outer wspace/hspace) and only
+        # reserve enough bottom margin for the shared legend.
         out_idx = fig_idx // n_per_fig + 1
         out_path_png = os.path.join(results_dir, f"fit_current_multipanel_{out_idx}.png")
         out_path_svg = os.path.join(results_dir, f"fit_current_multipanel_{out_idx}.svg")
-        plt.tight_layout()
-        plt.savefig(out_path_png, dpi=300)
-        plt.savefig(out_path_svg, dpi=300)
+        # Keep explicit margins and avoid bbox_inches="tight":
+        # tight bounding boxes can trigger very large render surfaces (MemoryError)
+        # for big multi-axes figures with legends.
+        # Reserve space for the top legend.
+        fig.subplots_adjust(left=0.06, right=0.99, top=0.86, bottom=0.08)
+        fig.savefig(out_path_png, dpi=200)
+        fig.savefig(out_path_svg, dpi=200)
         plt.close(fig)
 
     if old_font is not None:

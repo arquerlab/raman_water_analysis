@@ -1,0 +1,254 @@
+[
+  {
+    "sample": "100 mA",
+    "experiment": "exp1",
+    "npz": "fit_traces_npz\\100_mA__exp1.npz",
+    "n_points": 1015,
+    "n_components": 4
+  },
+  {
+    "sample": "100 mA",
+    "experiment": "exp2",
+    "npz": "fit_traces_npz\\100_mA__exp2.npz",
+    "n_points": 1015,
+    "n_components": 4
+  },
+  {
+    "sample": "100 mA",
+    "experiment": "exp3",
+    "npz": "fit_traces_npz\\100_mA__exp3.npz",
+    "n_points": 1015,
+    "n_components": 4
+  },
+  {
+    "sample": "100 mA",
+    "experiment": "exp4",
+    "npz": "fit_traces_npz\\100_mA__exp4.npz",
+    "n_points": 1015,
+    "n_components": 4
+  },
+  {
+    "sample": "100 mA",
+    "experiment": "exp5",
+    "npz": "fit_traces_npz\\100_mA__exp5.npz",
+    "n_points": 1015,
+    "n_components": 4
+  },
+  {
+    "sample": "1000 mA",
+    "experiment": "exp1",
+    "npz": "fit_traces_npz\\1000_mA__exp1.npz",
+    "n_points": 1015,
+    "n_components": 4
+  },
+  {
+    "sample": "1000 mA",
+    "experiment": "exp2",
+    "npz": "fit_traces_npz\\1000_mA__exp2.npz",
+    "n_points": 1015,
+    "n_components": 4
+  },
+  {
+    "sample": "1000 mA",
+    "experiment": "exp3",
+    "npz": "fit_traces_npz\\1000_mA__exp3.npz",
+    "n_points": 1015,
+    "n_components": 4
+  },
+  {
+    "sample": "1000 mA",
+    "experiment": "exp4",
+    "npz": "fit_traces_npz\\1000_mA__exp4.npz",
+    "n_points": 1015,
+    "n_components": 4
+  },
+  {
+    "sample": "1000 mA",
+    "experiment": "exp5",
+    "npz": "fit_traces_npz\\1000_mA__exp5.npz",
+    "n_points": 1015,
+    "n_components": 4
+  },
+  {
+    "sample": "150 mA",
+    "experiment": "exp1",
+    "npz": "fit_traces_npz\\150_mA__exp1.npz",
+    "n_points": 1015,
+    "n_components": 4
+  },
+  {
+    "sample": "150 mA",
+    "experiment": "exp2",
+    "npz": "fit_traces_npz\\150_mA__exp2.npz",
+    "n_points": 1015,
+    "n_components": 4
+  },
+  {
+    "sample": "150 mA",
+    "experiment": "exp3",
+    "npz": "fit_traces_npz\\150_mA__exp3.npz",
+    "n_points": 1015,
+    "n_components": 4
+  },
+  {
+    "sample": "150 mA",
+    "experiment": "exp4",
+    "npz": "fit_traces_npz\\150_mA__exp4.npz",
+    "n_points": 1015,
+    "n_components": 4
+  },
+  {
+    "sample": "200 mA",
+    "experiment": "exp1",
+    "npz": "fit_traces_npz\\200_mA__exp1.npz",
+    "n_points": 1015,
+    "n_components": 4
+  },
+  {
+    "sample": "200 mA",
+    "experiment": "exp2",
+    "npz": "fit_traces_npz\\200_mA__exp2.npz",
+    "n_points": 1015,
+    "n_components": 4
+  },
+  {
+    "sample": "200 mA",
+    "experiment": "exp3",
+    "npz": "fit_traces_npz\\200_mA__exp3.npz",
+    "n_points": 1015,
+    "n_components": 4
+  },
+  {
+    "sample": "200 mA",
+    "experiment": "exp4",
+    "npz": "fit_traces_npz\\200_mA__exp4.npz",
+    "n_points": 1015,
+    "n_components": 4
+  },
+  {
+    "sample": "200 mA",
+    "experiment": "exp5",
+    "npz": "fit_traces_npz\\200_mA__exp5.npz",
+    "n_points": 1015,
+    "n_components": 4
+  },
+  {
+    "sample": "300 mA",
+    "experiment": "exp1",
+    "npz": "fit_traces_npz\\300_mA__exp1.npz",
+    "n_points": 1015,
+    "n_components": 4
+  },
+  {
+    "sample": "300 mA",
+    "experiment": "exp2",
+    "npz": "fit_traces_npz\\300_mA__exp2.npz",
+    "n_points": 1015,
+    "n_components": 4
+  },
+  {
+    "sample": "300 mA",
+    "experiment": "exp3",
+    "npz": "fit_traces_npz\\300_mA__exp3.npz",
+    "n_points": 1015,
+    "n_components": 4
+  },
+  {
+    "sample": "300 mA",
+    "experiment": "exp4",
+    "npz": "fit_traces_npz\\300_mA__exp4.npz",
+    "n_points": 1015,
+    "n_components": 4
+  },
+  {
+    "sample": "300 mA",
+    "experiment": "exp5",
+    "npz": "fit_traces_npz\\300_mA__exp5.npz",
+    "n_points": 1015,
+    "n_components": 4
+  },
+  {
+    "sample": "300 mA",
+    "experiment": "exp6",
+    "npz": "fit_traces_npz\\300_mA__exp6.npz",
+    "n_points": 1015,
+    "n_components": 4
+  },
+  {
+    "sample": "300 mA",
+    "experiment": "exp7",
+    "npz": "fit_traces_npz\\300_mA__exp7.npz",
+    "n_points": 1015,
+    "n_components": 4
+  },
+  {
+    "sample": "400 mA",
+    "experiment": "exp1",
+    "npz": "fit_traces_npz\\400_mA__exp1.npz",
+    "n_points": 921,
+    "n_components": 4
+  },
+  {
+    "sample": "500 mA",
+    "experiment": "exp1",
+    "npz": "fit_traces_npz\\500_mA__exp1.npz",
+    "n_points": 1015,
+    "n_components": 4
+  },
+  {
+    "sample": "500 mA",
+    "experiment": "exp2",
+    "npz": "fit_traces_npz\\500_mA__exp2.npz",
+    "n_points": 1015,
+    "n_components": 4
+  },
+  {
+    "sample": "500 mA",
+    "experiment": "exp3",
+    "npz": "fit_traces_npz\\500_mA__exp3.npz",
+    "n_points": 1015,
+    "n_components": 4
+  },
+  {
+    "sample": "500 mA",
+    "experiment": "exp4",
+    "npz": "fit_traces_npz\\500_mA__exp4.npz",
+    "n_points": 1015,
+    "n_components": 4
+  },
+  {
+    "sample": "500 mA",
+    "experiment": "exp5",
+    "npz": "fit_traces_npz\\500_mA__exp5.npz",
+    "n_points": 1015,
+    "n_components": 4
+  },
+  {
+    "sample": "750 mA",
+    "experiment": "exp1",
+    "npz": "fit_traces_npz\\750_mA__exp1.npz",
+    "n_points": 1015,
+    "n_components": 4
+  },
+  {
+    "sample": "750 mA",
+    "experiment": "exp2",
+    "npz": "fit_traces_npz\\750_mA__exp2.npz",
+    "n_points": 1015,
+    "n_components": 4
+  },
+  {
+    "sample": "750 mA",
+    "experiment": "exp3",
+    "npz": "fit_traces_npz\\750_mA__exp3.npz",
+    "n_points": 1015,
+    "n_components": 4
+  },
+  {
+    "sample": "750 mA",
+    "experiment": "exp4",
+    "npz": "fit_traces_npz\\750_mA__exp4.npz",
+    "n_points": 1015,
+    "n_components": 4
+  }
+]

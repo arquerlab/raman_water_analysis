@@ -7,20 +7,20 @@ fwhm_bounds = [5.0, 80.0]
 
 [peaks.4hb]
 fit = true
-initial_position = 3220.0
+initial_position = 3215.0
 initial_fwhm = 150.0
-position_bounds = [3180.0, 3300.0]
+position_bounds = [3180.0, 3255.0]
 fwhm_bounds = [50, 280]
 
 [peaks.3hb]
 fit = true
 initial_position = 3430.0
 initial_fwhm = 150
-position_bounds = [3380.0, 3520.0]
+position_bounds = [3380.0, 3475.0]
 fwhm_bounds = [100, 280]
 
 [peaks.0hb]
-fit = false
+fit = true
 initial_position = 3580.25
 initial_fwhm = 100.0
 position_bounds = [3580.0, 3580.5]

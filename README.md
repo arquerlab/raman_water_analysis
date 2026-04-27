@@ -119,6 +119,14 @@ The plotting outputs are generated per dataset into `results/<dataset_folder_rel
 - `fit_current_multipanel_{i}.png` / `fit_current_multipanel_{i}.svg`
   - Created by stitching the individual fit figures (`fit_*_current_*_exp_*.png`) into 2×3 grids, with a title of the form `{current} / {exp}`.
 
+## Run for a Single Subfolder
+
+You can restrict processing to only one dataset subfolder under `data/` (e.g. `flow_cell`):
+
+```bash
+python scripts/run_full_analysis.py --subfolder flow_cell
+```
+
 ---
 
 ## Software requirements

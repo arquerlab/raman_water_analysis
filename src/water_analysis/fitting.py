@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 from typing import Iterable, Optional
+import json
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -139,6 +140,7 @@ def fit_currents(
                 fit_int = mult_gaussian(wn, *popt)
 
             peak_params = []
+            fitted_peak_names = [name for name, v in config["peaks"].items() if v.get("fit", False)]
             start_params = len(params) % 3
             for peak_idx in range(start_params, len(params) - start_params, 3):
                 pos, amp, fwhm = popt[peak_idx : peak_idx + 3]
@@ -155,6 +157,7 @@ def fit_currents(
                 "baseline": baseline,
                 "intensity_corrected": int_corr,
                 "peak_params": peak_params,
+                "peak_names": fitted_peak_names,
                 "popt": popt,
                 "pcov": pcov,
                 "fit_total": total_fit,
@@ -162,48 +165,7 @@ def fit_currents(
             }
             results.append(params_dict)
 
-            fig, ax = plt.subplots(2, 1, figsize=(8, 8))
-            ax[0].plot(wn, intensity, color="black", label="Data")
-            ax[0].plot(wn, total_fit, color="red", label="Fitted")
-            ax[0].plot(wn, baseline, color="orange", label="Baseline")
-            for peak_idx in range(start_params, len(params) - start_params, 3):
-                pos, amp, fwhm = popt[peak_idx : peak_idx + 3]
-                gauss = amp * np.exp(
-                    -(np.power(wn - pos, 2) / (fwhm * fwhm / 4.0 / np.log(2.0)))
-                )
-                ax[0].plot(wn, baseline + gauss, label=f"Gaussian {peak_idx // 3 + 1}")
-                ax[0].fill_between(wn, baseline + gauss, baseline, alpha=0.4)
-            ax[0].legend(frameon=False, fontsize=14, ncol=2, loc="lower left")
-
-            ax[1].scatter(wn, fit_res, color="black", label="Residuals")
-            r2 = 1 - np.sum(fit_res**2) / np.sum((intensity - np.mean(intensity)) ** 2)
-            ax[1].text(
-                0.15,
-                0.92,
-                f"R$^{{2}}$: {r2:.4f}",
-                color="red",
-                transform=ax[1].transAxes,
-                fontsize=16,
-            )
-            ax[1].legend(frameon=False, fontsize=16)
-            ax[1].set_xlabel("Raman shift (cm$^{-1}$)", fontsize=16)
-            ax[1].set_ylabel("Residuals (a.u.)", fontsize=16)
-            ax[0].set_xlabel("Raman shift (cm$^{-1}$)", fontsize=16)
-            ax[0].set_ylabel("Intensity (a.u.)", fontsize=16)
-            for axis in (ax[0], ax[1]):
-                axis.tick_params(axis="both", which="major", labelsize=16)
-                axis.tick_params(axis="both", which="minor", labelsize=16)
-
-            fig.tight_layout()
-
-            out_name = f"fit_{exp_id:02d}_current_{current}_exp_{exp}.png"
-            fig.savefig(
-                os.path.join(results_dir, out_name),
-                dpi=300,
-                bbox_inches="tight",
-            )
             exp_id += 1
-            plt.close()
 
     if plot:
         plt.show()
@@ -212,13 +174,19 @@ def fit_currents(
         plt.rcParams["font.family"] = old_font
 
     rows: list[dict] = []
+    peak_index_by_name = {"membrane": 1, "4hb": 2, "3hb": 3, "0hb": 4}
     for res in results:
         for i, peak in enumerate(res["peak_params"]):
+            peak_name = None
+            if "peak_names" in res and i < len(res["peak_names"]):
+                peak_name = res["peak_names"][i]
+            peak_index = peak_index_by_name.get(str(peak_name).lower(), i + 1)
             rows.append(
                 {
                     "sample": res["sample"],
                     "experiment": res["experiment"],
-                    "peak_index": i + 1,
+                    "peak_index": peak_index,
+                    "peak_name": peak_name,
                     "position": peak[0],
                     "amplitude": peak[1],
                     "fwhm": peak[2],
@@ -227,5 +195,57 @@ def fit_currents(
 
     params_df = pd.DataFrame(rows)
     params_df.to_csv(os.path.join(results_dir, "fit_peak_params.csv"), index=False)
-    return params_df
+
+    # Save full per-experiment fit traces in a compact, reloadable format.
+    # JSON is not suitable here because it cannot store ndarrays without
+    # converting to huge nested lists.
+    fit_traces_dir = os.path.join(results_dir, "fit_traces_npz")
+    _ensure_results_dir(fit_traces_dir)
+
+    manifest: list[dict] = []
+
+    def _slug(text: str) -> str:
+        safe = "".join(ch if ch.isalnum() or ch in ("-", "_") else "_" for ch in str(text))
+        while "__" in safe:
+            safe = safe.replace("__", "_")
+        return safe.strip("_")
+
+    for res in results:
+        sample = str(res["sample"])
+        experiment = str(res["experiment"])
+        base = f"{_slug(sample)}__{_slug(experiment)}"
+        npz_name = f"{base}.npz"
+        npz_path = os.path.join(fit_traces_dir, npz_name)
+
+        peak_params_arr = np.asarray(res["peak_params"], dtype=float)
+
+        np.savez_compressed(
+            npz_path,
+            sample=sample,
+            experiment=experiment,
+            wn=np.asarray(res["wn"]),
+            intensity=np.asarray(res["intensity"]),
+            baseline=np.asarray(res["baseline"]),
+            intensity_corrected=np.asarray(res["intensity_corrected"]),
+            peak_params=peak_params_arr,
+            popt=np.asarray(res["popt"]),
+            pcov=np.asarray(res["pcov"]),
+            fit_total=np.asarray(res["fit_total"]),
+            residuals=np.asarray(res["residuals"]),
+        )
+
+        manifest.append(
+            {
+                "sample": sample,
+                "experiment": experiment,
+                "npz": os.path.relpath(npz_path, results_dir),
+                "n_points": int(len(res["wn"])),
+                "n_components": int(peak_params_arr.shape[0]) if peak_params_arr.ndim == 2 else None,
+            }
+        )
+
+    with open(os.path.join(results_dir, "fit_traces_manifest.json"), "w", encoding="utf-8") as f:
+        json.dump(manifest, f, indent=2)
+
+    return params_df, results
 

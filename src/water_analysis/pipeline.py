@@ -12,6 +12,7 @@ from .plotting import plot_fit_params
 def run_full_analysis_for_all_subfolders(
     data_root: Optional[pathlib.Path] = None,
     results_root: Optional[pathlib.Path] = None,
+    only_subfolder: Optional[str] = None,
     bs_method: str = "integrated",
     plot_fitting: bool = False,
 ) -> None:
@@ -25,6 +26,8 @@ def run_full_analysis_for_all_subfolders(
     - Use ``current vs voltage.xlsx`` from the same subfolder if present,
       otherwise fall back to ``<data_root>/current vs voltage.xlsx``.
     - Write outputs to ``<results_root>/<dataset_subfolder_relative_path>/``.
+    - Optionally, if ``only_subfolder`` is provided, restrict processing to
+      datasets whose relative dataset folder starts with that value.
     """
 
     project_root = get_project_root()
@@ -46,10 +49,27 @@ def run_full_analysis_for_all_subfolders(
         excel_path = configured if configured.is_absolute() else project_root / configured
         input_excels = [excel_path]
 
+    normalized_only: Optional[str] = only_subfolder.replace("\\", "/").strip("/") if only_subfolder else None
+
+    def dataset_matches_dataset_filter(rel_dataset_dir: pathlib.Path, dataset_dir_fallback_name: str) -> bool:
+        if normalized_only is None:
+            return True
+        if rel_dataset_dir is not None:
+            rel_posix = rel_dataset_dir.as_posix()
+            return rel_posix == normalized_only or rel_posix.startswith(normalized_only + "/")
+        return dataset_dir_fallback_name == normalized_only
+
     for excel_path in input_excels:
         # Treat the directory containing the spectroscopy Excel as the dataset folder.
         dataset_dir = excel_path.parent
-        rel_dataset_dir = dataset_dir.relative_to(data_root) if dataset_dir.is_relative_to(data_root) else dataset_dir.name
+        rel_dataset_dir = (
+            dataset_dir.relative_to(data_root)
+            if dataset_dir.is_relative_to(data_root)
+            else pathlib.Path(dataset_dir.name)
+        )
+
+        if not dataset_matches_dataset_filter(rel_dataset_dir, dataset_dir.name):
+            continue
 
         run_results_dir = results_root / rel_dataset_dir
         run_results_dir.mkdir(parents=True, exist_ok=True)
@@ -70,15 +90,29 @@ def run_full_analysis_for_all_subfolders(
             long_df_out_path=long_df_out_path,
         )
 
-        fit_results = fit_currents(
-            long_df=long_df,
-            bs_method=bs_method,
-            plot=plot_fitting,
-            results_dir=str(run_results_dir),
-        )
+        # Flow-cell specific override: do not fit the membrane peak for this dataset only.
+        # This keeps the global config unchanged for other datasets.
+        dataset_name = rel_dataset_dir.parts[0] if rel_dataset_dir.parts else dataset_dir.name
+        normalized_dataset = str(dataset_name).replace("\\", "/").strip("/").lower()
+        membrane_original_fit = None
+        if normalized_dataset == "flow_cell" and "peaks" in config and "membrane" in config["peaks"]:
+            membrane_original_fit = config["peaks"]["membrane"].get("fit", None)
+            config["peaks"]["membrane"]["fit"] = False
+
+        try:
+            fit_results, fittings_list = fit_currents(
+                long_df=long_df,
+                bs_method=bs_method,
+                plot=plot_fitting,
+                results_dir=str(run_results_dir),
+            )
+        finally:
+            if membrane_original_fit is not None:
+                config["peaks"]["membrane"]["fit"] = membrane_original_fit
 
         plot_fit_params(
             fit_results=fit_results,
+            fittings_list=fittings_list,
             results_dir=str(run_results_dir),
             current_voltage_excel=iv_path,
         )
