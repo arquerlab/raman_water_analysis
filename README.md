@@ -4,18 +4,80 @@ This repository contains the analysis code used to fit current-dependent spectra
 
 ---
 
+## Installation
+
+### Requirements
+- Python 3.11+ recommended
+
+### Create and activate a virtual environment
+
+Windows (PowerShell):
+
+```bash
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+```
+
+macOS/Linux:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+```
+
+### Install dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+---
+
+## Usage
+
+### Run the full pipeline (all datasets)
+This discovers all `*_data.xlsx` files under `data/` and runs:
+read Excel → fit spectra → generate all summary plots.
+
+```bash
+python scripts/run_full_analysis.py
+```
+
+### Run the full pipeline for a single dataset subfolder
+
+```bash
+python scripts/run_full_analysis.py --subfolder flow_cell
+```
+
+### Regenerate only the summary plots (no refitting)
+Use this when `fit_peak_params.csv` already exists in the dataset results folder.
+
+```bash
+python scripts/make_fit_summary_plots.py --subfolder flow_cell
+```
+
+You can also point directly to a results directory:
+
+```bash
+python scripts/make_fit_summary_plots.py --results-dir results/flow_cell
+```
+
+---
+
 ## Repository structure (current)
 
 - `src/water_analysis/`  
   Core analysis package:
-  - `io.py`: reading the spectroscopy Excel file, constructing the long-format dataframe, and writing `data/long_df.csv`.
+  - `io.py`: reading the spectroscopy Excel file and constructing the long-format dataframe (`long_df.csv`).
   - `fitting.py`: `fit_currents(...)` implementation, performing the spectral fits and writing `results/fit_peak_params.csv` and individual fit figures `results/fit_*_current_*_exp_*.png`.
   - `plotting.py`: `plot_fit_params(...)` implementation, aggregating parameters and generating all summary and multipanel figures plus intermediate CSVs.
 
 - `scripts/`  
   Thin command-line entry points:
   - `scripts/run_full_analysis.py`: runs the complete pipeline (read Excel → fit → all figures).
-  - `scripts/make_fit_summary_plots.py`: regenerates all summary and multipanel figures from an existing `results/fit_peak_params.csv`.
+  - `scripts/make_fit_summary_plots.py`: regenerates all summary and multipanel figures from an existing `fit_peak_params.csv` inside a dataset results folder (see `--subfolder` / `--results-dir` in the Usage section).
 
 - `main.py`  
   Convenience entry point that mirrors `scripts/run_full_analysis.py` and uses the `water_analysis` package.
@@ -31,6 +93,7 @@ This repository contains the analysis code used to fit current-dependent spectra
 
 - `results/`  
   Output directory for all generated files:
+  - `long_df.csv` – tidy long-form input used for fitting (written per dataset).
   - `fit_peak_params.csv` – input for `plot_fit_params` if not passing a DataFrame.
   - `fit_*_current_*_exp_*.png` – individual fit plots for each current/experiment combination.
   - `fit_peak_params_agg.csv` – aggregated amplitudes, FWHM, positions vs current density.
@@ -109,7 +172,8 @@ The plotting outputs are generated per dataset into `results/<dataset_folder_rel
 
 ### Derived quantities
 - `fit_peak_params_percentages_data.csv` and `fit_peak_params_percentages.png/svg`
-  - Percentage of total amplitude (%) vs `current_density` for the selected water peaks (hard-coded in the plotting code to the fitted peak indices used for 4-HB water and 3-HB water).
+  - Percentage of total amplitude (%) vs `current_density` for the selected water peaks.
+  - Includes 4-HB water and 3-HB water, and also includes 0-HB if it is enabled in `config.toml` (`peaks.0hb.fit = true`).
 - `fit_peak_params_stark_slopes_data.csv` and `fit_peak_params_stark_slopes.png/svg`
   - Stark slope analysis over three current-density intervals: `0.05–0.2`, `0.2–0.4`, `0.4–0.75` `A·cm^-2` (computed from the corresponding fitted peak positions at the matching current bounds)
   - Bottom panel: Stark slope bars (cm^-1 V^-1) for the two selected peaks.
@@ -119,33 +183,8 @@ The plotting outputs are generated per dataset into `results/<dataset_folder_rel
 - `fit_current_multipanel_{i}.png` / `fit_current_multipanel_{i}.svg`
   - Created by stitching the individual fit figures (`fit_*_current_*_exp_*.png`) into 2×3 grids, with a title of the form `{current} / {exp}`.
 
-## Run for a Single Subfolder
-
-You can restrict processing to only one dataset subfolder under `data/` (e.g. `flow_cell`):
-
-```bash
-python scripts/run_full_analysis.py --subfolder flow_cell
-```
-
 ---
 
-## Software requirements
-
-The analysis code is written in Python and uses:
-
-- `numpy`
-- `pandas`
-- `matplotlib`
-- `openpyxl` or a similar engine for reading Excel files (via `pandas.read_excel`)
-- standard library modules (`os`, `glob`)
-
-You can install the required packages, for example:
-
-```bash
-pip install numpy pandas matplotlib openpyxl
-```
-
----
 ## License
 
 MIT License
